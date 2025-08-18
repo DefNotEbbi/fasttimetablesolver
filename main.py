@@ -2,11 +2,10 @@
 # Filters FAST NUCES Google Spreadsheets timetable and returns your sections' timetable
 #
 # TODO: Test this program for other semesters
-# TODO: Match entire section codes rather than just the end of a section
-# TODO: Use submap dictionary to expand subject names
-# TODO: Fill out full subject codes for all 8 semesters in the submap dictionary under the tableOutput() function
+# TODO: Allow for printing multiple days
+# TODO: Add error checking for section input
 
-url = ""
+url = "" # Add the sheets url here between the two "
 
 import pandas as pd
 import re
@@ -50,7 +49,10 @@ def classStringToDict(cell: str) -> dict:
     
     subject = match.group("subject").strip()
     is_lab = bool(match.group("lab"))
-    section = match.group("section").split("-")[-1].strip()
+    
+    raw_section = match.group("section")
+    section = re.sub(r"\s*-\s*", "-", raw_section.strip())
+    
     teacher = match.group("teacher").strip()
     
     return {
@@ -91,12 +93,12 @@ def tableOutput(dict):
         9 : "15:20 to 16:05"
     }
 
-    submap = {
-        "PF" : "Programming Fundamentals",
-        "IST" : "Islamic Studies/Ethics",
-        "FE" : "Functional English",
-        "ICP" : "Internet Communications and Protocols"
-    }
+    # submap = {
+    #     "PF" : "Programming Fundamentals",
+    #     "IST" : "Islamic Studies/Ethics",
+    #     "FE" : "Functional English",
+    #     "ICP" : "Internet Communications and Protocols"
+    # }
 
     day = dict['day']
     print(f"\n{'='*40} {day} {'='*40}")
@@ -112,7 +114,11 @@ def tableOutput(dict):
 
 
 if __name__ == "__main__":
+    if not url:
+        print("ERROR: Please edit this main.py file and add the Google Sheets link in the format specified in the README")
+        exit(0)
+
     df = fetchToDict(url)
-    section = str(input("Enter your section (e.g 2A, 1B, 4H): "))
+    section = str(input("Enter your section (e.g BCS-1J): "))
     personalData = tableSolver(df, section)
     tableOutput(personalData)
