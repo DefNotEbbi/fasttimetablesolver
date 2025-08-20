@@ -2,16 +2,42 @@
 # Filters FAST NUCES Google Spreadsheets timetable and returns your sections' timetable
 #
 # TODO: Test this program for other semesters
-# TODO: Allow for printing multiple days
-# TODO: Add error checking for section input
-
-url = "" # Add the sheets url here between the two "
 
 import pandas as pd
 import re
+import os
 
-def fetchToDict(url):
-    df = pd.read_csv(url)
+def importSheetURL():
+    if os.path.exists("data.ini"):
+        sheetID = None
+        with open("data.ini") as f:
+            sheetID = f.read().strip().split('=')[1]
+
+        return f"https://docs.google.com/spreadsheets/u/1/d/{sheetID}/export?format=xlsx"
+    else:
+        iniSetup()
+
+def iniSetup():
+    url = str(input("Please enter the Google Sheet URL (one-time setup only): "))
+    match = re.search(r"/d/([a-zA-Z0-9-_]+)", url)
+    sheetID = None
+    if match:
+        sheetID = match.group(1)
+    else:
+        print("Invalid URL, please paste the correct Google Sheets URL\n")
+        exit()
+
+    iniToWrite = f"sheet-id={sheetID}"
+    with open("data.ini", "x") as f:
+        f.write(iniToWrite)
+        f.close()
+    
+    print("Successfully created file 'data.ini'\nPlease run the program again!")
+    exit()
+
+
+def xlsxToDict(xlsx, sheetNum):
+    df = pd.read_excel(xlsx, sheetNum)
     schedule = {}
     
     rowsToDrop = [0, 1, 2, 49, 64]
@@ -28,7 +54,7 @@ def fetchToDict(url):
 
     return schedule
 
-def classStringToDict(cell: str) -> dict:
+def classStringToDict(cell):
     cell = cell.replace("\n", " ").strip()
     
     pattern = re.compile(
@@ -114,11 +140,20 @@ def tableOutput(dict):
 
 
 if __name__ == "__main__":
-    if not url:
-        print("ERROR: Please edit this main.py file and add the Google Sheets link in the format specified in the README")
-        exit(0)
+    url = importSheetURL()
+    try:
+        xlsx = pd.ExcelFile(url)
+    except:
+        print("Something went wrong, please check your internet connection")
+        print("If this issue persists, try deleting the 'data.ini' file and doing the first time setup again")
+        exit()
 
-    df = fetchToDict(url)
-    section = str(input("Enter your section (e.g BCS-1J): "))
-    personalData = tableSolver(df, section)
-    tableOutput(personalData)
+    try:
+        section = str(input("Enter your section (e.g BCS-1J): "))
+    except:
+        print("Invalid ID, try again")
+
+    for i in range(5):
+        df = xlsxToDict(xlsx=xlsx, sheetNum=i)
+        personalTable = tableSolver(df, section)
+        tableOutput(personalTable)
