@@ -154,6 +154,9 @@ if __name__ == "__main__":
         print("Invalid ID, try again")
 
     for i in range(5):
-        df = xlsxToDict(xlsx=xlsx, sheetNum=i)
+        try:
+            df = xlsxToDict(xlsx=xlsx, sheetNum=i)
+        except:
+            exit()
         personalTable = tableSolver(df, section)
         tableOutput(personalTable)
